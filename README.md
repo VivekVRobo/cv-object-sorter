@@ -1,10 +1,25 @@
 # Computer Vision Object Sorter
 
-[![Python CI](https://github.com/vasu4990/cv-object-sorter/actions/workflows/python.yml/badge.svg)](https://github.com/vasu4990/cv-object-sorter/actions/workflows/python.yml)
+[![Python CI](https://github.com/VivekVRobo/cv-object-sorter/actions/workflows/python.yml/badge.svg)](https://github.com/VivekVRobo/cv-object-sorter/actions/workflows/python.yml)
 
-A modular OpenCV reference system for detecting colored objects on a conveyor/work surface and sending deterministic sort commands to a microcontroller-driven diverter.
+A modular OpenCV robotics stack for detecting colored objects on a conveyor/work surface and issuing deterministic sort commands to a microcontroller-driven diverter.
 
 > **Status:** vision/software reference complete; HSV thresholds, camera exposure, trigger region, conveyor timing, actuator angles, and mechanical delays require calibration on the actual sorter.
+
+## Project snapshot
+
+| | |
+|---|---|
+| **Problem** | Detect an object, classify it, trigger once, and convert the vision result into a deterministic physical sorting command. |
+| **Vision stack** | OpenCV, HSV segmentation, morphology, contour/area filtering, centroid + bounding-box extraction |
+| **Control bridge** | Trigger gate + debounce, serial protocol, Arduino servo diverter |
+| **Configuration** | Color ranges live in `config/colors.yaml` instead of being embedded in detector code |
+| **Current maturity** | Software/vision reference; real lighting, conveyor timing and actuator mechanics remain evidence-gated |
+| **Next proof milestone** | Calibrate a physical sorter and publish confusion/accuracy, missed/duplicate-trigger rate, timing and short real-motion evidence |
+
+## Why this project exists
+
+The useful engineering problem is larger than “detect a red object.” A real sorter must keep detection, triggering, actuator commands and calibration assumptions explicit so the same object is not fired twice and software claims are not confused with physical sorting performance.
 
 ## Pipeline
 
@@ -113,6 +128,17 @@ Tests cover HSV range behavior, color classification, and command encoding.
 ├── sorter.py
 └── pyproject.toml
 ```
+
+## Physical validation roadmap
+
+A meaningful hardware milestone should include:
+
+1. a fixed camera/lighting setup and documented HSV calibration;
+2. a labeled test set across all supported classes;
+3. classification accuracy/confusion results under representative lighting;
+4. duplicate-trigger and missed-trigger counts at a stated conveyor speed;
+5. actuator command-to-sort timing measurements;
+6. real sorter video plus failure cases, not only successful examples.
 
 ## Limitations
 
