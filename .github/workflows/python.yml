@@ -13,7 +13,27 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install --upgrade pip
-      - run: pip install -r requirements.txt
-      - run: pip install -e .
+      - run: pip install -e . pytest
       - run: pytest -q
-      - run: python -m compileall -q src sorter.py
+      - run: python -m compileall -q src tools sorter.py
+      - name: Generate deterministic synthetic vision evidence
+        run: python tools/synthetic_vision_evidence.py --output artifacts/synthetic-vision-evidence.json
+      - name: Verify evidence claim boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('artifacts/synthetic-vision-evidence.json').read_text())
+          assert report['evidence_type'] == 'synthetic_threshold_contract_validation'
+          assert report['hardware_evidence'] is False
+          assert report['real_camera_dataset'] is False
+          assert report['summary']['accuracy'] == 1.0
+          assert report['summary']['samples'] >= 100
+          print('synthetic evidence boundary: PASS')
+          PY
+      - name: Upload software vision evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: cv-sorter-software-evidence
+          path: artifacts/synthetic-vision-evidence.json
+          if-no-files-found: error
