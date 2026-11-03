@@ -32,23 +32,25 @@ def run():
         raise SystemExit("--cooldown-s must be >= 0")
 
     serial_handle = None
-    if not args.dry_run:
-        if not args.port:
-            raise SystemExit("--port is required unless --dry-run is used")
-        import serial
-        serial_handle = serial.Serial(args.port, args.baud, timeout=0.1)
-
-    colors = load_color_ranges(args.config)
-    actuator = SortActuator(serial_handle, cooldown_s=args.cooldown_s)
-    trigger = PassageTrigger(
-        stable_frames_required=args.stable_frames,
-        reset_frames_required=args.reset_frames,
-    )
-    cap = cv2.VideoCapture(args.camera)
-    if not cap.isOpened():
-        raise SystemExit(f"Could not open camera {args.camera}")
-
+    cap = None
     try:
+        if not args.dry_run:
+            if not args.port:
+                raise SystemExit("--port is required unless --dry-run is used")
+            import serial
+
+            serial_handle = serial.Serial(args.port, args.baud, timeout=0.1)
+
+        colors = load_color_ranges(args.config)
+        actuator = SortActuator(serial_handle, cooldown_s=args.cooldown_s)
+        trigger = PassageTrigger(
+            stable_frames_required=args.stable_frames,
+            reset_frames_required=args.reset_frames,
+        )
+        cap = cv2.VideoCapture(args.camera)
+        if not cap.isOpened():
+            raise SystemExit(f"Could not open camera {args.camera}")
+
         while True:
             ok, frame = cap.read()
             if not ok:
@@ -101,10 +103,15 @@ def run():
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
     finally:
-        cap.release()
-        cv2.destroyAllWindows()
-        if serial_handle is not None:
-            serial_handle.close()
+        try:
+            if cap is not None:
+                cap.release()
+        finally:
+            try:
+                cv2.destroyAllWindows()
+            finally:
+                if serial_handle is not None:
+                    serial_handle.close()
 
 
 if __name__ == "__main__":
