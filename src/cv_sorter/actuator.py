@@ -17,6 +17,10 @@ class SortActuator:
     cooldown_s: float = 1.0
     _last_fire: float = -1e9
 
+    def __post_init__(self) -> None:
+        if self.cooldown_s < 0:
+            raise ValueError("cooldown_s must be >= 0")
+
     def ready(self) -> bool:
         return time.monotonic() - self._last_fire >= self.cooldown_s
 
