@@ -1,13 +1,23 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-import yaml
-
 
 @dataclass(frozen=True)
 class HSVRange:
     lower: tuple[int, int, int]
     upper: tuple[int, int, int]
+
+    def __post_init__(self) -> None:
+        if len(self.lower) != 3 or len(self.upper) != 3:
+            raise ValueError("HSV bounds must contain exactly three channels")
+        if any(not isinstance(value, int) or isinstance(value, bool) for value in (*self.lower, *self.upper)):
+            raise ValueError("HSV bounds must contain integers")
+        if any(value < 0 or value > 179 for value in (self.lower[0], self.upper[0])):
+            raise ValueError("HSV hue must be in the OpenCV range 0..179")
+        if any(value < 0 or value > 255 for value in (*self.lower[1:], *self.upper[1:])):
+            raise ValueError("HSV saturation/value must be in the OpenCV range 0..255")
+        if any(lo > hi for lo, hi in zip(self.lower, self.upper)):
+            raise ValueError("HSV lower bounds must not exceed upper bounds")
 
     def contains(self, hsv: tuple[int, int, int]) -> bool:
         return all(lo <= value <= hi for value, lo, hi in zip(hsv, self.lower, self.upper))
