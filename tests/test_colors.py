@@ -1,5 +1,3 @@
-from math import isnan
-
 import pytest
 
 from cv_sorter.colors import HSVRange, classify_hsv
