@@ -1,3 +1,7 @@
+from math import isnan
+
+import pytest
+
 from cv_sorter.colors import HSVRange, classify_hsv
 
 
@@ -16,3 +20,27 @@ def test_classification_with_split_red_ranges():
     assert classify_hsv((175, 200, 200), ranges) == "red"
     assert classify_hsv((60, 200, 200), ranges) == "green"
     assert classify_hsv((100, 20, 20), ranges) is None
+
+
+@pytest.mark.parametrize(
+    "lower, upper",
+    [
+        ((-1, 100, 80), (10, 255, 255)),
+        ((0, 100, 80), (180, 255, 255)),
+        ((0, 256, 80), (10, 255, 255)),
+        ((0, 100, 256), (10, 255, 255)),
+        ((10, 100, 80), (5, 255, 255)),
+        ((0, 100), (10, 255, 255)),
+        ((0, 100, 80), (10, 255)),
+        ((0, 100, True), (10, 255, 255)),
+    ],
+)
+def test_invalid_hsv_ranges_are_rejected(lower, upper):
+    with pytest.raises(ValueError):
+        HSVRange(lower, upper)
+
+
+def test_valid_opencv_hsv_range_accepts_boundary_values():
+    range_ = HSVRange((0, 0, 0), (179, 255, 255))
+    assert range_.contains((0, 0, 0))
+    assert range_.contains((179, 255, 255))
