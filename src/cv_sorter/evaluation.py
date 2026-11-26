@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
 from typing import Iterable
 
@@ -20,6 +21,24 @@ class LabeledPrediction:
     predicted: str
     detection_count: int
     primary_area: float | None
+    image_sha256: str = ""
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def dataset_manifest_sha256(rows: Iterable[LabeledPrediction]) -> str:
+    digest = hashlib.sha256()
+    for item in sorted(rows, key=lambda row: (row.source, row.expected, row.image_sha256)):
+        digest.update(
+            f"{item.source}\t{item.expected}\t{item.image_sha256}\n".encode("utf-8")
+        )
+    return digest.hexdigest()
 
 
 def predict_label(frame, color_ranges: dict[str, list[HSVRange]], min_area: float) -> tuple[str, int, float | None]:
@@ -65,6 +84,7 @@ def evaluate_predictions(predictions: Iterable[LabeledPrediction]) -> dict:
         "labels": labels,
         "confusion_matrix": confusion,
         "per_class": per_class,
+        "dataset_manifest_sha256": dataset_manifest_sha256(rows),
     }
 
 
@@ -74,7 +94,7 @@ def evaluate_dataset(
     *,
     min_area: float = 900.0,
 ) -> tuple[dict, list[LabeledPrediction]]:
-    """Evaluate ``dataset_dir/<label>/*.{png,jpg,...}`` without training.
+    """Evaluate \`\`dataset_dir/<label>/*.{png,jpg,...}\`\` without training.
 
     The directory names are the ground-truth labels. This function is suitable
     for a real, user-captured test set later, but the repository does not ship or
@@ -102,6 +122,7 @@ def evaluate_dataset(
                     predicted=predicted,
                     detection_count=detection_count,
                     primary_area=primary_area,
+                    image_sha256=sha256_file(image_path),
                 )
             )
             found_by_label[expected] += 1
