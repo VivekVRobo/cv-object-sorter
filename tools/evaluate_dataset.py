@@ -43,7 +43,14 @@ def main() -> int:
     with args.predictions_csv.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
-            fieldnames=["source", "expected", "predicted", "detection_count", "primary_area"],
+            fieldnames=[
+                "source",
+                "expected",
+                "predicted",
+                "detection_count",
+                "primary_area",
+                "image_sha256",
+            ],
         )
         writer.writeheader()
         for row in rows:
@@ -54,6 +61,7 @@ def main() -> int:
                     "predicted": row.predicted,
                     "detection_count": row.detection_count,
                     "primary_area": row.primary_area,
+                    "image_sha256": row.image_sha256,
                 }
             )
 
